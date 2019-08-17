@@ -12,6 +12,7 @@ positions = []
 hotkeys = []
 
 def dontQuit():
+	print('Ready.')
 	while True:
 		loopPositions()
 		if state == QUITTING:
@@ -50,11 +51,11 @@ def toggleClicking():
 
 	def cleared():
 		return len(positions) == 0
-	
+
 	if state == PAUSED and not cleared():
 		state = CLICKING
 	else:
-		state == PAUSED
+		state = PAUSED
 
 	print('state {}'.format(state))
 
