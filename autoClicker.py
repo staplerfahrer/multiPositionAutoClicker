@@ -10,6 +10,7 @@ state = PAUSED
 
 positions = []
 hotkeys = []
+lastUserMouse = (pyautogui.position().x, pyautogui.position().y)
 
 def dontQuit():
 	print('Ready.')
@@ -48,14 +49,18 @@ def clearPositions():
 
 def toggleClicking():
 	global state
+	global lastUserMouse
 
 	def cleared():
 		return len(positions) == 0
 
 	if state == PAUSED and not cleared():
+		lastUserMouse = lastUserMouse = (
+			pyautogui.position().x, pyautogui.position().y)
 		state = CLICKING
 	else:
 		state = PAUSED
+		pyautogui.moveTo(lastUserMouse[0], lastUserMouse[1])
 
 	print('state {}'.format(state))
 
