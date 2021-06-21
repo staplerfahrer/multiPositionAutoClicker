@@ -24,7 +24,7 @@ def doQuit():
 	for key in hotkeys:
 		try:
 			keyboard.remove_hotkey(key)
-		except KeyError as identifier:
+		except KeyError as _:
 			pass
 	state = QUITTING
 
