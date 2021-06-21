@@ -1,72 +1,92 @@
 import pyautogui
 import keyboard #also does mouse (pip install mouse, import mouse)
+from time import sleep
 
-pyautogui.PAUSE = 0.001
-
-PAUSED = 'paused'
-CLICKING = 'clicking'
-QUITTING = 'quitting'
-state = PAUSED
+#pyautogui.PAUSE = 0.4
 
 positions = []
 hotkeys = []
 lastUserMouse = (pyautogui.position().x, pyautogui.position().y)
+quitting = 0
 
-def dontQuit():
-	print('Ready.')
-	while True:
-		loopPositions()
-		if state == QUITTING:
-			quit()
+def message():
+    print('Ready.\n'
+          'ctrl+alt+z Learn position\n'
+          'ctrl+alt+a Pause\n'
+          'ctrl+alt+x Click positions\n'
+          'ctrl+alt+c Save\n'
+          'ctrl+alt+v Clear positions\n'
+          'ctrl+alt+q Quit'
+    )
 
-def doQuit():
-	global state
-	for key in hotkeys:
-		try:
-			keyboard.remove_hotkey(key)
-		except KeyError as _:
-			pass
-	state = QUITTING
-
+def load():
+    global positions
+    with open('positions.txt','r') as f:
+        positions = [
+            (tuple([int(y) for y in x.rstrip().split(',')]) if ',' in x else x.rstrip())
+            for x in f.readlines()]
+    print('loaded')
+    print(positions)
+    
 def addPosition():
-	x, y = pyautogui.position()
-	positions.append((x, y))
-	print('learned {} {}'.format(x, y))
+    x, y = pyautogui.position()
+    positions.append((x, y))
+    print(f'learned {x} {y}')
 
-def loopPositions():
-	global state
-	for pos in positions:
-		if state == CLICKING:
-			pyautogui.click(pos[0], pos[1])
-			print('clicked {} {}'.format(pos[0], pos[1]))
-		if state == QUITTING:
-			doQuit()
+def addPause():
+    positions.append((-1, -1))
+    print('added a pause')
+
+def clickPositions():
+    for pos in positions:
+        if type(pos) is tuple:
+            if (pos[0] > -1):
+                pyautogui.moveTo(pos[0], pos[1], 0.15, pyautogui.easeInOutQuad)
+                pyautogui.click(pos[0], pos[1])
+                print(f'clicked {pos[0]} {pos[1]}')
+            else:
+                print('pause.', end='')
+                sleep(1)
+                print('.', end='')
+                sleep(1)
+                #print('.')
+                #sleep(1)
+        else:
+            keyboard.press_and_release(pos)
+            print(f'pressed {pos}')
+
+def save():
+    with open('positions.txt','w') as f:
+        f.writelines([f'{x[0]},{x[1]}\n' for x in positions])
+    print('saved\n')
 
 def clearPositions():
-	positions.clear()
-	toggleClicking()
-	print('cleared')
+    s = input('Are you sure?! [y/N]')
+    if (s.upper() == 'Y'):
+        positions.clear()
+        print('cleared')
 
-def toggleClicking():
-	global state
-	global lastUserMouse
+def keepRunning():
+    while (not quitting):
+        pass
 
-	def cleared():
-		return len(positions) == 0
+def doQuit():
+    global quitting
+    for key in hotkeys:
+        try:
+            keyboard.remove_hotkey(key)
+        except KeyError as _:
+            pass
+    print('Done.\n')
+    quitting = 1
 
-	if state == PAUSED and not cleared():
-		lastUserMouse = lastUserMouse = (
-			pyautogui.position().x, pyautogui.position().y)
-		state = CLICKING
-	else:
-		state = PAUSED
-		pyautogui.moveTo(lastUserMouse[0], lastUserMouse[1])
+hotkeys.append(keyboard.add_hotkey('ctrl+alt+z', addPosition))
+hotkeys.append(keyboard.add_hotkey('ctrl+alt+a', addPause))
+hotkeys.append(keyboard.add_hotkey('ctrl+alt+x', clickPositions))
+hotkeys.append(keyboard.add_hotkey('ctrl+alt+c', save))
+hotkeys.append(keyboard.add_hotkey('ctrl+alt+v', clearPositions))
+hotkeys.append(keyboard.add_hotkey('ctrl+alt+q', doQuit))
 
-	print('state {}'.format(state))
-
-hotkeys.append(keyboard.add_hotkey('alt+z', addPosition))
-hotkeys.append(keyboard.add_hotkey('alt+x', toggleClicking))
-hotkeys.append(keyboard.add_hotkey('alt+c', clearPositions))
-hotkeys.append(keyboard.add_hotkey('alt+q', doQuit))
-
-dontQuit()
+message()
+load()
+keepRunning()
